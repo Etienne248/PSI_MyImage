@@ -200,8 +200,7 @@ namespace PSI_TD2
         #region fonction supplémentaire
 
         public static void Affiche<T>(T[] tableau)// fonction qui affiche  l'image quand elle est sous forme de tableau ( l'affiche n'est pas très propre car on ne saute pas de ligne,
-                                                  // sons seul interet est de verifier que l'image de depart est bien la meme, meme apres avoir été converti dans la classe MyImage
-        {
+        {                                         // sons seul interet est de verifier que l'image de depart est bien la meme, meme apres avoir été converti dans la classe MyImage
             if (tableau == null)
             {
                 Console.WriteLine("tableau null");
