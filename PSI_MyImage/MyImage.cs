@@ -580,7 +580,7 @@ namespace PSI_TD2
             }
             return octet;
         }
-        static int Byte_To_Int(bool[] octet)// entier--> octet
+        static int Byte_To_Int(bool[] octet)    // entier--> octet
         {
             int nombre = 0;
             for (int i = 0; i < octet.Length; i++)
