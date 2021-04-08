@@ -518,22 +518,22 @@ namespace PSI_TD2
         public static Pixel[,] Codage_QR(string texte)
         {
             int mode;
+            Pixel[,] QR;
             if (texte.Length == 0)
             {
                 Console.WriteLine("texte nulle");
                 return null;
             }
-
             else if (texte.Length < 26)
             {
                 mode = 1;
-                Pixel[,] QR = new Pixel[21, 21];
+                QR = new Pixel[21, 21];
                 int[] mode_bits = { 0, 0, 0, 1 };
             }
             else if (texte.Length < 48)
             {
                 mode = 2;
-                Pixel[,] QR = new Pixel[25, 25];
+                QR = new Pixel[25, 25];
                 int[] mode_bits = { 0, 0, 1, 0 };
             }
             else
@@ -541,51 +541,54 @@ namespace PSI_TD2
                 Console.WriteLine("nous ne pouvons pas encoder ce texte, il y a trop de caractères");
                 return null;
             }
-            bool[] longueur_bits = Int_To_Byte(texte.Length);
-            if (texte.Length % 2 == 1)
+
+            List<bool> longueur_bits = Int_To_Byte(texte.Length, 9);
+            byte[] alphanum=String_To_Alphanumerique(texte);
+            List<bool> texteBits= new List<bool>();
+            for (int i = 0; i < alphanum.Length-1; i += 2)
             {
-                string[] texte_2par2 = new string[(texte.Length / 2) + 1];
-                for (int i = 0; i < texte.Length; i += 2)
-                {
-                    if (i == texte_2par2.Length - 1)
-                    {
-                        texte_2par2[i] += texte[i];
-                    }
-                    else
-                    {
-                        texte_2par2[i] += texte[i] + texte[i + 1];
-                    }
-                }
-
+                texteBits.AddRange(Int_To_Byte(alphanum[i] * 45 + alphanum[i + 1],11));
             }
-            else
-            {
-                string[] texte_2par2 = new string[texte.Length / 2];
-
-                for (int i = 0; i < texte.Length; i += 2)
-                {
-                    texte_2par2[i] += texte[i] + texte[i + 1];
-                }
-            }
-
+            if (texte.Length % 2 == 1) texteBits.AddRange(Int_To_Byte(alphanum[alphanum.Length - 1], 6)); ;
+            
 
             return null;
         }
-        static bool[] Int_To_Byte(int nombre, int longueur = 9)// entier--> octet
+
+        public static byte[] String_To_Alphanumerique(string texte)
         {
-            bool[] octet = new bool[longueur];
+            byte[] alphanum = new byte[texte.Length];
+            for(int i=0;i< texte.Length;i++)
+            {
+                if (texte[i] >= 48 && texte[i] <= 57) alphanum[i] = (byte)(texte[i] - 48);
+                else if(texte[i] >= 65 && texte[i] <= 90) alphanum[i] = (byte)(texte[i] - 55);
+                else if (texte[i] == '$') alphanum[i] = 37;
+                else if (texte[i] == '%') alphanum[i] = 38;
+                else if (texte[i] == '*') alphanum[i] = 39;
+                else if (texte[i] == '+') alphanum[i] = 40;
+                else if (texte[i] == '-') alphanum[i] = 41;
+                else if (texte[i] == '.') alphanum[i] = 42;
+                else if (texte[i] == '/') alphanum[i] = 43;
+                else if (texte[i] == ':') alphanum[i] = 44;
+            }
+            return null;
+        }
+
+        static List<bool> Int_To_Byte(int nombre, int longueur)// entier--> octet
+        {
+            List<bool> octet = new List<bool>();
             for (int i = 0; i < longueur; i++)
             {
                 octet[longueur - 1 - i] = ((nombre >> i) & 1) == 1;
             }
             return octet;
         }
-        static int Byte_To_Int(bool[] octet)    // entier--> octet
+        static int Byte_To_Int(List<bool> octet)    // entier--> octet
         {
             int nombre = 0;
-            for (int i = 0; i < octet.Length; i++)
+            for (int i = 0; i < octet.Count; i++)
             {
-                nombre |= (octet[i] ? 1 : 0) << (octet.Length - i - 1);
+                nombre |= (octet[i] ? 1 : 0) << (octet.Count - i - 1);
             }
             return nombre;
         }
