@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ReedSolomon;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
@@ -354,7 +355,7 @@ namespace PSI_TD2
 
         #region TD5
 
-        public MyImage(int hauteur, int largeur) // creation de class MyImage avec seulement la hauteru et la largeur
+        public MyImage(int hauteur, int largeur) // creation de class MyImage avec seulement la hauteur et la largeur
         {
 
             this.hauteur = hauteur;
@@ -517,7 +518,9 @@ namespace PSI_TD2
 
         public static Pixel[,] Codage_QR(string texte)
         {
-            int mode;
+            int version;
+            int nombreTotalOctets;
+            int nombreOctetsEC;
             Pixel[,] QR;
             if (texte.Length == 0)
             {
@@ -526,15 +529,19 @@ namespace PSI_TD2
             }
             else if (texte.Length < 26)
             {
-                mode = 1;
+                version = 1;
                 QR = new Pixel[21, 21];
-                int[] mode_bits = { 0, 0, 0, 1 };
+                nombreTotalOctets = 19;
+                nombreOctetsEC = 7;
+                int[] version_bits = { 0, 0, 0, 1 };
             }
             else if (texte.Length < 48)
             {
-                mode = 2;
+                version = 2;
                 QR = new Pixel[25, 25];
-                int[] mode_bits = { 0, 0, 1, 0 };
+                nombreTotalOctets = 34;
+                nombreOctetsEC = 10;
+                int[] version_bits = { 0, 0, 1, 0 };
             }
             else
             {
@@ -542,15 +549,24 @@ namespace PSI_TD2
                 return null;
             }
 
-            List<bool> longueur_bits = Int_To_Byte(texte.Length, 9);
+            List<bool> longueur_bits = Int_To_Bits(texte.Length, 9);
             byte[] alphanum=String_To_Alphanumerique(texte);
-            List<bool> texteBits= new List<bool>();
+            List<bool> donnees_et_EC= new List<bool>(nombreTotalOctets);
             for (int i = 0; i < alphanum.Length-1; i += 2)
             {
-                texteBits.AddRange(Int_To_Byte(alphanum[i] * 45 + alphanum[i + 1],11));
+                donnees_et_EC.AddRange(Int_To_Bits(alphanum[i] * 45 + alphanum[i + 1],11));
             }
-            if (texte.Length % 2 == 1) texteBits.AddRange(Int_To_Byte(alphanum[alphanum.Length - 1], 6)); ;
-            
+            if (texte.Length % 2 == 1) donnees_et_EC.AddRange(Int_To_Bits(alphanum[alphanum.Length - 1], 6)); ;
+
+            for (int i = 0; i < donnees_et_EC.Count % 8; i++) donnees_et_EC.Add(false);
+
+            for (int i = 0; i < (nombreTotalOctets - nombreOctetsEC)-(donnees_et_EC.Count / 8) ; i++)
+            {
+                if (i % 2 == 0) donnees_et_EC.AddRange(Int_To_Bits(0b11101100, 8));
+                else donnees_et_EC.AddRange(Int_To_Bits(0b00010001, 8));
+            }
+            byte[] EC = ReedSolomonAlgorithm.Encode(Bits_To_Bytes(donnees_et_EC), nombreOctetsEC, ErrorCorrectionCodeType.QRCode);
+            donnees_et_EC.AddRange(Bytes_To_Bits(EC));
 
             return null;
         }
@@ -571,26 +587,44 @@ namespace PSI_TD2
                 else if (texte[i] == '/') alphanum[i] = 43;
                 else if (texte[i] == ':') alphanum[i] = 44;
             }
-            return null;
+            return alphanum;
         }
 
-        static List<bool> Int_To_Byte(int nombre, int longueur)// entier--> octet
+        static List<bool> Int_To_Bits(int nombre, int longueur)// entier--> Bits
         {
-            List<bool> octet = new List<bool>();
+            List<bool> bits = new List<bool>();
             for (int i = 0; i < longueur; i++)
             {
-                octet[longueur - 1 - i] = ((nombre >> i) & 1) == 1;
+                bits[longueur - 1 - i] = ((nombre >> i) & 1) == 1;
             }
-            return octet;
+            return bits;
         }
-        static int Byte_To_Int(List<bool> octet)    // entier--> octet
+        static int Bits_To_Int(List<bool> bits)    // Bits--> entier
         {
             int nombre = 0;
-            for (int i = 0; i < octet.Count; i++)
+            for (int i = 0; i < bits.Count; i++)
             {
-                nombre |= (octet[i] ? 1 : 0) << (octet.Count - i - 1);
+                nombre |= (bits[i] ? 1 : 0) << (bits.Count - i - 1);
             }
             return nombre;
+        }
+        static byte[] Bits_To_Bytes(List<bool> bits) // Bits--> octets
+        {
+            byte[] octets = new byte[bits.Count / 8];
+            for (int i = 0; i < octets.Length; i++)
+            {
+                octets[i]= (byte)(Bits_To_Int(bits.GetRange(i*8,8)));
+            }
+            return octets;
+        }
+        static List<bool> Bytes_To_Bits(byte[] octets) // octets--> Bits
+        {
+            List<bool> bits = new List<bool>();
+            for (int i = 0; i < octets.Length; i++)
+            {
+                bits.AddRange(Int_To_Bits(octets[i], 8));
+            }
+            return bits;
         }
 
         static int[] Assemblage_Tableau(int[] x, int[] y) // tab1+tab2=tab3
