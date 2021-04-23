@@ -221,7 +221,7 @@ namespace Projet_PSI
                 }
             }
         }
-        public static void Affiche<T>(T[,] matrice)//fonction qui affiche  l'image quand elle est sous forme de matrice
+        public static void Affiche<T>(T[,] matrice)// fonction qui affiche  l'image quand elle est sous forme de matrice
         {
             if (matrice == null)
             {
