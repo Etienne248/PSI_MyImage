@@ -5,7 +5,7 @@ using System.IO;
 using System.Numerics;
 using System.Text;
 
-namespace PSI_TD2
+namespace Projet_PSI
 {
     class MyImage
     {
@@ -550,17 +550,17 @@ namespace PSI_TD2
             }
 
             List<bool> longueur_bits = Int_To_Bits(texte.Length, 9);
-            byte[] alphanum=String_To_Alphanumerique(texte);
-            List<bool> donnees_et_EC= new List<bool>(nombreTotalOctets);
-            for (int i = 0; i < alphanum.Length-1; i += 2)
+            byte[] alphanum = String_To_Alphanumerique(texte);
+            List<bool> donnees_et_EC = new List<bool>(nombreTotalOctets);
+            for (int i = 0; i < alphanum.Length - 1; i += 2)
             {
-                donnees_et_EC.AddRange(Int_To_Bits(alphanum[i] * 45 + alphanum[i + 1],11));
+                donnees_et_EC.AddRange(Int_To_Bits(alphanum[i] * 45 + alphanum[i + 1], 11));
             }
             if (texte.Length % 2 == 1) donnees_et_EC.AddRange(Int_To_Bits(alphanum[alphanum.Length - 1], 6)); ;
 
             for (int i = 0; i < donnees_et_EC.Count % 8; i++) donnees_et_EC.Add(false);
 
-            for (int i = 0; i < (nombreTotalOctets - nombreOctetsEC)-(donnees_et_EC.Count / 8) ; i++)
+            for (int i = 0; i < (nombreTotalOctets - nombreOctetsEC) - (donnees_et_EC.Count / 8); i++)
             {
                 if (i % 2 == 0) donnees_et_EC.AddRange(Int_To_Bits(0b11101100, 8));
                 else donnees_et_EC.AddRange(Int_To_Bits(0b00010001, 8));
@@ -568,16 +568,39 @@ namespace PSI_TD2
             byte[] EC = ReedSolomonAlgorithm.Encode(Bits_To_Bytes(donnees_et_EC), nombreOctetsEC, ErrorCorrectionCodeType.QRCode);
             donnees_et_EC.AddRange(Bytes_To_Bits(EC));
 
+
+
             return null;
+        }
+
+        public static void parcourirEmplacementDonnees(List<bool> donnees, bool[,] QRcode, bool WriteElseRead, int taille)
+        {
+            
+            int i = 0;
+            for (int x = QRcode.GetLength(1)-1; x>=0; x-=2)
+            {
+                for (int y = QRcode.GetLength(0) - (x>8? 1:8); y >= (x > 8 && x< QRcode.GetLength(1) - 8? 0:9); y -= 1)
+                {
+                    for(int xbis = x; xbis > x-2;xbis--)
+                    {
+                        if (true)
+                        {
+                            if (WriteElseRead) QRcode[y, xbis] = donnees[i];
+                            else donnees[i] = QRcode[y, xbis];
+                            i++;
+                        }
+                    }
+                }
+            }
         }
 
         public static byte[] String_To_Alphanumerique(string texte)
         {
             byte[] alphanum = new byte[texte.Length];
-            for(int i=0;i< texte.Length;i++)
+            for (int i = 0; i < texte.Length; i++)
             {
                 if (texte[i] >= 48 && texte[i] <= 57) alphanum[i] = (byte)(texte[i] - 48);
-                else if(texte[i] >= 65 && texte[i] <= 90) alphanum[i] = (byte)(texte[i] - 55);
+                else if (texte[i] >= 65 && texte[i] <= 90) alphanum[i] = (byte)(texte[i] - 55);
                 else if (texte[i] == '$') alphanum[i] = 37;
                 else if (texte[i] == '%') alphanum[i] = 38;
                 else if (texte[i] == '*') alphanum[i] = 39;
@@ -613,7 +636,7 @@ namespace PSI_TD2
             byte[] octets = new byte[bits.Count / 8];
             for (int i = 0; i < octets.Length; i++)
             {
-                octets[i]= (byte)(Bits_To_Int(bits.GetRange(i*8,8)));
+                octets[i] = (byte)(Bits_To_Int(bits.GetRange(i * 8, 8)));
             }
             return octets;
         }

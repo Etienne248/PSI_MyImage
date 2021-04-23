@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace PSI_TD2
+namespace Projet_PSI
 {
     class Program
     {

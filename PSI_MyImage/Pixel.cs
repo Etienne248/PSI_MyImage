@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace PSI_TD2
+namespace Projet_PSI
 {
     class Pixel//tableau contenant les pixels RGB
     {
