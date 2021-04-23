@@ -577,9 +577,12 @@ namespace Projet_PSI
         {
             
             int i = 0;
+            bool upElsedown=true;
             for (int x = QRcode.GetLength(1)-1; x>=0; x-=2)
             {
-                for (int y = QRcode.GetLength(0) - (x>8? 1:8); y >= (x > 8 && x< QRcode.GetLength(1) - 8? 0:9); y -= 1)
+                int a= QRcode.GetLength(0) - (x > 8 ? 1 : 8);
+                int b= (x > 8 && x < QRcode.GetLength(1) - 8 ? 0 : 9);
+                for (int y = upElsedown ? a : b; upElsedown ? y >= b : y <= a; y = upElsedown ? y-- : y++)
                 {
                     for(int xbis = x; xbis > x-2;xbis--)
                     {
@@ -591,6 +594,7 @@ namespace Projet_PSI
                         }
                     }
                 }
+                upElsedown=!upElsedown;
             }
         }
 
