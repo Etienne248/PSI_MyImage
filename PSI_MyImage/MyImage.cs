@@ -516,12 +516,12 @@ namespace Projet_PSI
 
         #region TD6
 
-        public static Pixel[,] Codage_QR(string texte)
+        public static Pixel[,] Codage_QR(string texte, int taille)
         {
             int version;
             int nombreTotalOctets;
             int nombreOctetsEC;
-            Pixel[,] QR;
+            bool[,] QRcode;
             if (texte.Length == 0)
             {
                 Console.WriteLine("texte nulle");
@@ -530,7 +530,7 @@ namespace Projet_PSI
             else if (texte.Length < 26)
             {
                 version = 1;
-                QR = new Pixel[21, 21];
+                QRcode = new bool[21, 21];
                 nombreTotalOctets = 19;
                 nombreOctetsEC = 7;
                 int[] version_bits = { 0, 0, 0, 1 };
@@ -538,7 +538,7 @@ namespace Projet_PSI
             else if (texte.Length < 48)
             {
                 version = 2;
-                QR = new Pixel[25, 25];
+                QRcode = new bool[25, 25];
                 nombreTotalOctets = 34;
                 nombreOctetsEC = 10;
                 int[] version_bits = { 0, 0, 1, 0 };
@@ -567,27 +567,29 @@ namespace Projet_PSI
             }
             byte[] EC = ReedSolomonAlgorithm.Encode(Bits_To_Bytes(donnees_et_EC), nombreOctetsEC, ErrorCorrectionCodeType.QRCode);
             donnees_et_EC.AddRange(Bytes_To_Bits(EC));
+            parcourirEmplacementDonnees(donnees_et_EC, QRcode, true);
+
 
 
 
             return null;
         }
 
-        public static void parcourirEmplacementDonnees(List<bool> donnees, bool[,] QRcode, bool WriteElseRead, int taille)
+        public static void parcourirEmplacementDonnees(List<bool> donnees, bool[,] QRcode, bool WriteElseRead)
         {
-
             int i = 0;
             bool upElsedown = true;
             bool mode1 = QRcode.GetLength(0) == 21;
             for (int x = QRcode.GetLength(1) - 1; x >= 0; x -= 2)
             {
+                if (x == 6) x--;
                 int a = QRcode.GetLength(0) - (x > 8 ? 1 : 8);
                 int b = (x > 8 && x < QRcode.GetLength(1) - 8 ? 0 : 9);
                 for (int y = upElsedown ? a : b; upElsedown ? y >= b : y <= a; y = upElsedown ? y-- : y++)
                 {
                     for (int xbis = x; xbis > x - 2; xbis--)
                     {
-                        if (mode1 || y > 18 + 2 || y < 18 - 2 || xbis > 18 + 2 || xbis < 18 - 2)
+                        if ((mode1 || y > 18 + 2 || y < 18 - 2 || xbis > 18 + 2 || xbis < 18 - 2) && y != 6)
                         {
                             if (WriteElseRead) QRcode[y, xbis] = donnees[i];
                             else donnees[i] = QRcode[y, xbis];
@@ -616,6 +618,21 @@ namespace Projet_PSI
                 else if (texte[i] == ':') alphanum[i] = 44;
             }
             return alphanum;
+        }
+
+        public static void WriteBoolImage(bool[,] boolIm, MyImage image, bool boolImToImage)
+        {
+            Pixel noir = new Pixel(0, 0, 0);
+            Pixel blanc = new Pixel(255, 255, 255);
+            int facteur = image.hauteur / boolIm.GetLength(0);
+            for (int i = image.hauteur - 1; i >= 0; i--)
+            {
+                for (int j = 0; j < image.largeur; j++)
+                {
+                    if (boolImToImage) image.image[i, j] = boolIm[i / facteur, j / facteur] ? blanc : noir;
+                    else boolIm[i / facteur, j / facteur] = image.image[i, j] == blanc;
+                }
+            }
         }
 
         static List<bool> Int_To_Bits(int nombre, int longueur)// entier--> Bits
