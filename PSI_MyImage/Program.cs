@@ -20,7 +20,7 @@ namespace Projet_PSI
 
                     Console.WriteLine("Entrez une méthode de création d'une nouvelle image ou 0 pour revenir en arrière (l'image selectionné sera créer pour laisser place à l'image créer!):");
                     Console.WriteLine("Vous pouvez rentrer par exemple:");
-                    Console.WriteLine("1-mandelbrot\n2-histogramme\n3-coder\n4-décoder");
+                    Console.WriteLine("1-mandelbrot\n2-histogramme\n3-coder\n4-décoder\n5-coder_QR\n6-décoder_QR");
                     s = Console.ReadLine();
                     string m;
                     switch (s)
@@ -108,6 +108,9 @@ namespace Projet_PSI
 
                         case "5":
                         case "coder_QR":
+                            Console.WriteLine("écrire le texte à coder");
+                            string texte = Console.ReadLine();
+                            image = MyImage.Codage_QR(texte, 4);
                             break;
                         case "6":
                         case "décoder_QR":
@@ -223,6 +226,7 @@ namespace Projet_PSI
         }
         public static void Affiche<T>(T[,] matrice)// fonction qui affiche  l'image quand elle est sous forme de matrice
         {
+            
             if (matrice == null)
             {
                 Console.WriteLine("matrice null");
@@ -241,6 +245,33 @@ namespace Projet_PSI
                         for (int j = 0; j < matrice.GetLength(1); j++)
                         {
                             Console.Write(matrice[i, j].ToString() + " ");
+                        }
+                        Console.WriteLine();
+                    }
+                }
+            }
+        }
+        public static void Affiche(bool[,] matrice)// fonction qui affiche  l'image quand elle est sous forme de matrice
+        {
+
+            if (matrice == null)
+            {
+                Console.WriteLine("matrice null");
+            }
+
+            else
+            {
+                if (matrice.Length == 0)
+                {
+                    Console.WriteLine("matrice vide");
+                }
+                else
+                {
+                    for (int i = 0; i < matrice.GetLength(0); i++)
+                    {
+                        for (int j = 0; j < matrice.GetLength(1); j++)
+                        {
+                            Console.Write((matrice[i, j] ? 1: 0) + " ");
                         }
                         Console.WriteLine();
                     }
