@@ -531,14 +531,12 @@ namespace Projet_PSI
                 QRcode = new bool[21, 21];
                 nombreOctetsDonnees = 19;
                 nombreOctetsEC = 7;
-                int[] version_bits = { 0, 0, 0, 1 };
             }
             else if (texte.Length < 48)
             {
                 QRcode = new bool[25, 25];
                 nombreOctetsDonnees = 34;
                 nombreOctetsEC = 10;
-                int[] version_bits = { 0, 0, 1, 0 };
             }
             else
             {
@@ -546,9 +544,10 @@ namespace Projet_PSI
                 return null;
             }
 
-            List<bool> longueur_bits = Int_To_Bits(texte.Length, 9);
+            List<bool> donnees_et_EC = new List<bool>();
+            donnees_et_EC.AddRange(new List<bool>() { false, false, true, false });
+            donnees_et_EC.AddRange(Int_To_Bits(texte.Length, 9));
             byte[] alphanum = String_To_Alphanumerique(texte);
-            List<bool> donnees_et_EC = new List<bool>(nombreOctetsDonnees);
             for (int i = 0; i < alphanum.Length - 1; i += 2)
             {
                 donnees_et_EC.AddRange(Int_To_Bits(alphanum[i] * 45 + alphanum[i + 1], 11));
@@ -574,18 +573,29 @@ namespace Projet_PSI
             if (QRcode.GetLength(0) == 25) MultiSquare(QRcode, new bool[] { true, false, true }, 18, 18);
 
             List<bool> masque0correctionL = Int_To_Bits(0b111011111000100, 15);
+            bool b;
             for (int i = 0; i < 15; i++)
             {
+                b = masque0correctionL[i];
                 if (i <= 6)
                 {
-                    QRcode[QRcode.GetLength(0) - 1 - i, 8] = masque0correctionL[i];
-                    QRcode[8, i <= 5 ? i : 7] = masque0correctionL[i];
+                    QRcode[QRcode.GetLength(0) - 1 - i, 8] = b;
+                    QRcode[8, i <= 5 ? i : 7] = b;
                 }
                 else
                 {
-                    QRcode[8, QRcode.GetLength(0) - 8 + i] = masque0correctionL[i];
-                    QRcode[8, QRcode.GetLength(0) - 8 + i] = masque0correctionL[i];
+                    QRcode[8, QRcode.GetLength(0) - 15 + i] = b;
+                    QRcode[(i <= 8) ? (15 - i) : (14 - i), 8] = b;
                 }
+            }
+            QRcode[QRcode.GetLength(0) - 8, 8] = true;
+
+            b = true;
+            for (int i = 8; i < QRcode.GetLength(0) - 8; i++)
+            {
+                QRcode[i, 6] = b;
+                QRcode[6, i] = b;
+                b = !b;
             }
 
             MyImage image = new MyImage(QRcode.GetLength(0) * taille, QRcode.GetLength(0) * taille);
