@@ -575,18 +575,19 @@ namespace Projet_PSI
 
         public static void parcourirEmplacementDonnees(List<bool> donnees, bool[,] QRcode, bool WriteElseRead, int taille)
         {
-            
+
             int i = 0;
-            bool upElsedown=true;
-            for (int x = QRcode.GetLength(1)-1; x>=0; x-=2)
+            bool upElsedown = true;
+            bool mode1 = QRcode.GetLength(0) == 21;
+            for (int x = QRcode.GetLength(1) - 1; x >= 0; x -= 2)
             {
-                int a= QRcode.GetLength(0) - (x > 8 ? 1 : 8);
-                int b= (x > 8 && x < QRcode.GetLength(1) - 8 ? 0 : 9);
+                int a = QRcode.GetLength(0) - (x > 8 ? 1 : 8);
+                int b = (x > 8 && x < QRcode.GetLength(1) - 8 ? 0 : 9);
                 for (int y = upElsedown ? a : b; upElsedown ? y >= b : y <= a; y = upElsedown ? y-- : y++)
                 {
-                    for(int xbis = x; xbis > x-2;xbis--)
+                    for (int xbis = x; xbis > x - 2; xbis--)
                     {
-                        if (true)
+                        if (mode1 || y > 18 + 2 || y < 18 - 2 || xbis > 18 + 2 || xbis < 18 - 2)
                         {
                             if (WriteElseRead) QRcode[y, xbis] = donnees[i];
                             else donnees[i] = QRcode[y, xbis];
@@ -594,7 +595,7 @@ namespace Projet_PSI
                         }
                     }
                 }
-                upElsedown=!upElsedown;
+                upElsedown = !upElsedown;
             }
         }
 
