@@ -12,7 +12,7 @@ namespace Projet_PSI
         // toutes les propriétés importantes de l'image
         private string format;
         private int taille_fichier;
-        private int taille_offset;
+        private int taille_offset ;
         private int largeur;
         private int hauteur;
         private int nbre_bits_par_couleur;
