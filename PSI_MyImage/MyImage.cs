@@ -12,7 +12,7 @@ namespace Projet_PSI
         // toutes les propriétés importantes de l'image
         private string format;
         private int taille_fichier;
-        private int taille_offset ;
+        private int taille_offset;
         private int largeur;
         private int hauteur;
         private int nbre_bits_par_couleur;
@@ -557,7 +557,7 @@ namespace Projet_PSI
 
             for (int i = 0; i < donnees_et_EC.Count % 8; i++) donnees_et_EC.Add(false);
 
-            int nombreOctetsEnPlus = nombreOctetsDonnees  - (donnees_et_EC.Count / 8);
+            int nombreOctetsEnPlus = nombreOctetsDonnees - (donnees_et_EC.Count / 8);
             for (int i = 0; i < nombreOctetsEnPlus; i++)
             {
                 if (i % 2 == 0) donnees_et_EC.AddRange(Int_To_Bits(0b11101100, 8));
@@ -567,6 +567,26 @@ namespace Projet_PSI
             donnees_et_EC.AddRange(Bytes_To_Bits(EC));
             ParcourirEmplacementDonnees(donnees_et_EC, QRcode, true);
 
+            bool[] remplisage = new bool[] { true, true, false, true, false };
+            MultiSquare(QRcode, remplisage, 3, 3);
+            MultiSquare(QRcode, remplisage, 3, QRcode.GetLength(1) - 4);
+            MultiSquare(QRcode, remplisage, QRcode.GetLength(0) - 4, 3);
+            if (QRcode.GetLength(0) == 25) MultiSquare(QRcode, new bool[] { true, false, true }, 18, 18);
+
+            List<bool> masque0correctionL = Int_To_Bits(0b111011111000100, 15);
+            for (int i = 0; i < 15; i++)
+            {
+                if (i <= 6)
+                {
+                    QRcode[QRcode.GetLength(0) - 1 - i, 8] = masque0correctionL[i];
+                    QRcode[8, i <= 5 ? i : 7] = masque0correctionL[i];
+                }
+                else
+                {
+                    QRcode[8, QRcode.GetLength(0) - 8 + i] = masque0correctionL[i];
+                    QRcode[8, QRcode.GetLength(0) - 8 + i] = masque0correctionL[i];
+                }
+            }
 
             MyImage image = new MyImage(QRcode.GetLength(0) * taille, QRcode.GetLength(0) * taille);
             WriteBoolImage(QRcode, image, true);
@@ -586,7 +606,7 @@ namespace Projet_PSI
                 int b = (x > 8 && x < QRcode.GetLength(1) - 8 ? 0 : 9);
                 for (int y = upElsedown ? a : b; upElsedown ? y >= b : y <= a; y += upElsedown ? -1 : 1)
                 {
-                    for (int xbis = x; xbis > x - 2; xbis--)
+                    for (int xbis = x; xbis > x - 2 && i < donnees.Count; xbis--)
                     {
                         if ((mode1 || y > 18 + 2 || y < 18 - 2 || xbis > 18 + 2 || xbis < 18 - 2) && y != 6)
                         {
@@ -628,8 +648,21 @@ namespace Projet_PSI
             {
                 for (int j = 0; j < image.largeur; j++)
                 {
-                    if (boolImToImage) image.image[i, j] = boolIm[i / facteur, j / facteur] ? blanc : noir;
-                    else boolIm[i / facteur, j / facteur] = image.image[i, j] == blanc;
+                    if (boolImToImage) image.image[i, j] = boolIm[i / facteur, j / facteur] ? noir : blanc;
+                    else boolIm[i / facteur, j / facteur] = image.image[i, j] == noir;
+                }
+            }
+        }
+
+        public static void MultiSquare<T>(T[,] matrice, T[] remplisage, int y, int x)
+        {
+            int ymax = Math.Min(y + remplisage.Length, matrice.GetLength(0));
+            int xmax = Math.Min(x + remplisage.Length, matrice.GetLength(1));
+            for (int i = Math.Max(y - remplisage.Length + 1, 0); i < ymax; i++)
+            {
+                for (int j = Math.Max(x - remplisage.Length + 1, 0); j < xmax; j++)
+                {
+                    matrice[i, j] = remplisage[Math.Max(Math.Abs(y - i), Math.Abs(x - j))];
                 }
             }
         }
@@ -639,7 +672,7 @@ namespace Projet_PSI
             List<bool> bits = new List<bool>();
             for (int i = 0; i < longueur; i++)
             {
-                bits.Insert(0,((nombre >> i) & 1) == 1);
+                bits.Insert(0, ((nombre >> i) & 1) == 1);
             }
             return bits;
         }
