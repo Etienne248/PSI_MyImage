@@ -554,7 +554,7 @@ namespace Projet_PSI
             }
             if (texte.Length % 2 == 1) donnees_et_EC.AddRange(Int_To_Bits(alphanum[alphanum.Length - 1], 6)); ;
 
-            for (int i = 0; i < donnees_et_EC.Count % 8||i < 4 && donnees_et_EC.Count < nombreOctetsDonnees * 8  ; i++) donnees_et_EC.Add(false);
+            for (int i = 0; (donnees_et_EC.Count % 8 != 0) || (i < 4 && donnees_et_EC.Count < nombreOctetsDonnees * 8); i++) donnees_et_EC.Add(false);
 
             int nombreOctetsEnPlus = nombreOctetsDonnees - (donnees_et_EC.Count / 8);
             for (int i = 0; i < nombreOctetsEnPlus; i++)
