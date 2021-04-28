@@ -110,7 +110,7 @@ namespace Projet_PSI
                         case "coder_QR":
                             Console.WriteLine("écrire le texte à coder");
                             string texte = Console.ReadLine();
-                            image = MyImage.Codage_QR(texte, 4);
+                            image = MyImage.Codage_QR(texte, 8);
                             break;
                         case "6":
                         case "décoder_QR":

@@ -554,6 +554,7 @@ namespace Projet_PSI
             }
             if (texte.Length % 2 == 1) donnees_et_EC.AddRange(Int_To_Bits(alphanum[alphanum.Length - 1], 6)); ;
 
+            for (int i = 0; i < 4 && donnees_et_EC.Count < nombreOctetsDonnees * 8; i++) donnees_et_EC.Add(false);
             for (int i = 0; i < donnees_et_EC.Count % 8; i++) donnees_et_EC.Add(false);
 
             int nombreOctetsEnPlus = nombreOctetsDonnees - (donnees_et_EC.Count / 8);
@@ -616,12 +617,12 @@ namespace Projet_PSI
                 int b = (x > 8 && x < QRcode.GetLength(1) - 8 ? 0 : 9);
                 for (int y = upElsedown ? a : b; upElsedown ? y >= b : y <= a; y += upElsedown ? -1 : 1)
                 {
-                    for (int xbis = x; xbis > x - 2 && i < donnees.Count; xbis--)
+                    for (int xbis = x; xbis > x - 2; xbis--)
                     {
                         if ((mode1 || y > 18 + 2 || y < 18 - 2 || xbis > 18 + 2 || xbis < 18 - 2) && y != 6)
                         {
-                            if (WriteElseRead) QRcode[y, xbis] = donnees[i];
-                            else donnees[i] = QRcode[y, xbis];
+                            if (WriteElseRead) QRcode[y, xbis] = (i < donnees.Count ? donnees[i] : false) ^ (y + xbis) % 2 == 0;
+                            else donnees[i] = QRcode[y, xbis];//!!!
                             i++;
                         }
                     }
@@ -645,6 +646,7 @@ namespace Projet_PSI
                 else if (texte[i] == '.') alphanum[i] = 42;
                 else if (texte[i] == '/') alphanum[i] = 43;
                 else if (texte[i] == ':') alphanum[i] = 44;
+                else alphanum[i] = 36;
             }
             return alphanum;
         }
