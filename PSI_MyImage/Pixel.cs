@@ -58,5 +58,11 @@ namespace Projet_PSI
         {
             return rouge + " " + vert + " " + bleu;
         }
+        
+        public bool PlusProcheDeQue(Pixel a,Pixel b)
+        {
+            int i=Math.Abs(rouge-a.Rouge)+ Math.Abs(vert - a.Vert)+ Math.Abs(bleu - a.Bleu)-(Math.Abs(rouge - b.Rouge) + Math.Abs(vert - b.Vert) + Math.Abs(bleu - b.Bleu));
+            return i<0;
+        }
     }
 }

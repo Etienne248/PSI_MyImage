@@ -516,11 +516,13 @@ namespace Projet_PSI
 
         #region TD6
 
-        public static MyImage Codage_QR(string texte, int taille)
+        public static bool[,] Codage_QR(string texte)
         {
             int nombreOctetsDonnees;
             int nombreOctetsEC;
             bool[,] QRcode;
+
+            //choix de la version (1 ou 2) ou retoune null si la taill du texte est incompatible
             if (texte.Length == 0)
             {
                 Console.WriteLine("texte nulle");
@@ -544,34 +546,39 @@ namespace Projet_PSI
                 return null;
             }
 
-            List<bool> donnees_et_EC = new List<bool>();
-            donnees_et_EC.AddRange(new List<bool>() { false, false, true, false });
-            donnees_et_EC.AddRange(Int_To_Bits(texte.Length, 9));
-            byte[] alphanum = String_To_Alphanumerique(texte);
+            List<bool> donnees_et_EC = new List<bool>();    //Création de la chaine de données 
+            donnees_et_EC.AddRange(new List<bool>() { false, false, true, false }); //on place l'indicateur du mode alphanumérique sur 4 bits
+            donnees_et_EC.AddRange(Int_To_Bits(texte.Length, 9)); //ajout de la taille du texte sur 9 bits
+
+            byte[] alphanum = String_To_Alphanumerique(texte);//converti le texte en alphanumérique
             for (int i = 0; i < alphanum.Length - 1; i += 2)
             {
-                donnees_et_EC.AddRange(Int_To_Bits(alphanum[i] * 45 + alphanum[i + 1], 11));
+                donnees_et_EC.AddRange(Int_To_Bits(alphanum[i] * 45 + alphanum[i + 1], 11)); //Encodage des caractères alphanumériques deux à deux sur 11 bits
             }
-            if (texte.Length % 2 == 1) donnees_et_EC.AddRange(Int_To_Bits(alphanum[alphanum.Length - 1], 6)); ;
+            if (texte.Length % 2 == 1) donnees_et_EC.AddRange(Int_To_Bits(alphanum[alphanum.Length - 1], 6)); //ajout du dernier caractère sur 6 bits si le nombre de caractère est impair
 
+            //ajout de la terminaison et ajout de 0 pour faire une chaine d'octet
             for (int i = 0; (donnees_et_EC.Count % 8 != 0) || (i < 4 && donnees_et_EC.Count < nombreOctetsDonnees * 8); i++) donnees_et_EC.Add(false);
 
             int nombreOctetsEnPlus = nombreOctetsDonnees - (donnees_et_EC.Count / 8);
-            for (int i = 0; i < nombreOctetsEnPlus; i++)
+            for (int i = 0; i < nombreOctetsEnPlus; i++) // ajout des octets équivalent à 236 et 17 jusqu'à atteindre le nombre d'octets pour les donne
             {
                 if (i % 2 == 0) donnees_et_EC.AddRange(Int_To_Bits(0b11101100, 8));
                 else donnees_et_EC.AddRange(Int_To_Bits(0b00010001, 8));
             }
-            byte[] EC = ReedSolomonAlgorithm.Encode(Bits_To_Bytes(donnees_et_EC), nombreOctetsEC, ErrorCorrectionCodeType.QRCode);
-            donnees_et_EC.AddRange(Bytes_To_Bits(EC));
-            ParcourirEmplacementDonnees(donnees_et_EC, QRcode, true);
+            byte[] EC = ReedSolomonAlgorithm.Encode(Bits_To_Bytes(donnees_et_EC), nombreOctetsEC, ErrorCorrectionCodeType.QRCode);//génération de la correction d'erreur
+            donnees_et_EC.AddRange(Bytes_To_Bits(EC)); //ajout de la correction d'erreur
 
+            ParcourirEmplacementDonnees(donnees_et_EC, QRcode, true);//on écrit les données sur le QR Code
+
+            //on place les motifs de recherche dans les 3 coins
             bool[] remplisage = new bool[] { true, true, false, true, false };
             MultiSquare(QRcode, remplisage, 3, 3);
             MultiSquare(QRcode, remplisage, 3, QRcode.GetLength(1) - 4);
             MultiSquare(QRcode, remplisage, QRcode.GetLength(0) - 4, 3);
-            if (QRcode.GetLength(0) == 25) MultiSquare(QRcode, new bool[] { true, false, true }, 18, 18);
+            if (QRcode.GetLength(0) == 25) MultiSquare(QRcode, new bool[] { true, false, true }, 18, 18);//on le motif d'alignement se c'est la version 2
 
+            //on place les informations concernant le masque et de la correction d'erreur
             List<bool> masque0correctionL = Int_To_Bits(0b111011111000100, 15);
             bool b;
             for (int i = 0; i < 15; i++)
@@ -590,6 +597,7 @@ namespace Projet_PSI
             }
             QRcode[QRcode.GetLength(0) - 8, 8] = true;
 
+            //on place les motifs de synchronisation
             b = true;
             for (int i = 8; i < QRcode.GetLength(0) - 8; i++)
             {
@@ -598,10 +606,45 @@ namespace Projet_PSI
                 b = !b;
             }
 
-            MyImage image = new MyImage(QRcode.GetLength(0) * taille, QRcode.GetLength(0) * taille);
-            WriteBoolImage(QRcode, image, true);
+            return QRcode;
+        }
 
-            return image;
+        public static string Decodage_QR(bool[,] QRcode)
+        {
+            int nombreOctetsDonnees;
+            int nombreOctetsEC;
+            if (QRcode.GetLength(0) == 21)
+            {
+                nombreOctetsDonnees = 19;
+                nombreOctetsEC = 7;
+            }
+            else if (QRcode.GetLength(0) == 25)
+            {
+                nombreOctetsDonnees = 34;
+                nombreOctetsEC = 10;
+            }
+            else
+            {
+                Console.WriteLine("QRcode non valide");
+                return null;
+            }
+            List<bool> donnees = new List<bool>();
+            List<bool> EC = new List<bool>();
+            {
+                List<bool> donnees_et_EC = new List<bool>();
+                ParcourirEmplacementDonnees(donnees_et_EC, QRcode, false);
+                donnees = donnees_et_EC.GetRange(0, nombreOctetsDonnees);
+                EC = donnees_et_EC.GetRange(nombreOctetsDonnees, nombreOctetsEC);
+            }
+            byte[] donneescorrige = ReedSolomonAlgorithm.Decode(Bits_To_Bytes(donnees), Bits_To_Bytes(EC));
+            donnees = Bytes_To_Bits(donneescorrige);
+            for(int i=0; i<donnees.Count;i++)
+            {
+
+            }
+            
+
+            return null;
         }
 
         public static void ParcourirEmplacementDonnees(List<bool> donnees, bool[,] QRcode, bool WriteElseRead)
@@ -620,9 +663,12 @@ namespace Projet_PSI
                     {
                         if ((mode1 || y > 18 + 2 || y < 18 - 2 || xbis > 18 + 2 || xbis < 18 - 2) && y != 6)
                         {
-                            if (WriteElseRead) QRcode[y, xbis] = (i < donnees.Count ? donnees[i] : false) ^ (y + xbis) % 2 == 0;
-                            else donnees[i] = QRcode[y, xbis];//!!!
-                            i++;
+                            if (WriteElseRead)
+                            {
+                                QRcode[y, xbis] = (i < donnees.Count ? donnees[i] : false) /*masque0*/^ (y + xbis) % 2 == 0;
+                                i++;
+                            }
+                            else donnees.Add(QRcode[y, xbis] /*masque0*/^ (y + xbis) % 2 == 0);
                         }
                     }
                 }
@@ -660,7 +706,7 @@ namespace Projet_PSI
                 for (int j = 0; j < image.largeur; j++)
                 {
                     if (boolImToImage) image.image[i, j] = boolIm[i / facteur, j / facteur] ? noir : blanc;
-                    else boolIm[i / facteur, j / facteur] = image.image[i, j] == noir;
+                    else boolIm[i / facteur, j / facteur] = image.image[i + facteur / 2, j + facteur / 2].PlusProcheDeQue(noir, blanc);
                 }
             }
         }

@@ -108,14 +108,24 @@ namespace Projet_PSI
 
                         case "5":
                         case "coder_QR":
-                            Console.WriteLine("écrire le texte à coder");
-                            string texte = Console.ReadLine();
-                            image = MyImage.Codage_QR(texte, 8);
-                            break;
+                            {
+                                Console.WriteLine("écrire le texte à coder");
+                                string texte = Console.ReadLine();
+                                bool[,] QRcode = MyImage.Codage_QR(texte);
+                                int taille = 8;
+                                image = new MyImage(QRcode.GetLength(0) * taille, QRcode.GetLength(1) * taille);
+                                MyImage.WriteBoolImage(QRcode, image, true);//conversion du QR code binaire en image noir et blanc
+                                break;
+                            }
+
                         case "6":
                         case "décoder_QR":
-                            break;
-
+                            {
+                                int taille = 8;
+                                bool[,] QRcode = new bool[image.Image.GetLength(0) / taille, image.Image.GetLength(1) / taille];
+                                MyImage.WriteBoolImage(QRcode, image, false);
+                                break;
+                            }
                     }
                 }
                 else if (s == "modifier" || s == "2")
@@ -226,7 +236,7 @@ namespace Projet_PSI
         }
         public static void Affiche<T>(T[,] matrice)// fonction qui affiche  l'image quand elle est sous forme de matrice
         {
-            
+
             if (matrice == null)
             {
                 Console.WriteLine("matrice null");
@@ -271,7 +281,7 @@ namespace Projet_PSI
                     {
                         for (int j = 0; j < matrice.GetLength(1); j++)
                         {
-                            Console.Write((matrice[i, j] ? 1: 0) + " ");
+                            Console.Write((matrice[i, j] ? 1 : 0) + " ");
                         }
                         Console.WriteLine();
                     }
