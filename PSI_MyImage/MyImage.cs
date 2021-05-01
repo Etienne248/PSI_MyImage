@@ -633,18 +633,22 @@ namespace Projet_PSI
             {
                 List<bool> donnees_et_EC = new List<bool>();
                 ParcourirEmplacementDonnees(donnees_et_EC, QRcode, false);
-                donnees = donnees_et_EC.GetRange(0, nombreOctetsDonnees);
-                EC = donnees_et_EC.GetRange(nombreOctetsDonnees, nombreOctetsEC);
+                donnees = donnees_et_EC.GetRange(0, nombreOctetsDonnees * 8);
+                EC = donnees_et_EC.GetRange(nombreOctetsDonnees * 8, nombreOctetsEC * 8);
             }
-            byte[] donneescorrige = ReedSolomonAlgorithm.Decode(Bits_To_Bytes(donnees), Bits_To_Bytes(EC));
+            byte[] donneescorrige = ReedSolomonAlgorithm.Decode(Bits_To_Bytes(donnees), Bits_To_Bytes(EC), ErrorCorrectionCodeType.QRCode);
             donnees = Bytes_To_Bits(donneescorrige);
-            for(int i=0; i<donnees.Count;i++)
+
+            int tailleTexte = Bits_To_Int(donnees.GetRange(4, 9));
+            byte[] alphanum = new byte[tailleTexte];
+            for (int i = 0; i < (tailleTexte / 2); i++)
             {
-
+                int bits11 = Bits_To_Int(donnees.GetRange((i * 11) + 13, 11));
+                alphanum[i * 2] = (byte)(bits11 / 45);
+                alphanum[i * 2 + 1] = (byte)(bits11 % 45);
             }
-            
-
-            return null;
+            if ((tailleTexte % 2) == 1) alphanum[alphanum.Length - 1] = (byte)Bits_To_Int(donnees.GetRange((tailleTexte / 2) * 11 + 13, 6));
+            return Alphanumerique_To_String(alphanum);
         }
 
         public static void ParcourirEmplacementDonnees(List<bool> donnees, bool[,] QRcode, bool WriteElseRead)
@@ -695,6 +699,25 @@ namespace Projet_PSI
             }
             return alphanum;
         }
+        public static string Alphanumerique_To_String(byte[] alphanum)
+        {
+            string texte = "";
+            for (int i = 0; i < alphanum.Length; i++)
+            {
+                if (alphanum[i] >= 0 && alphanum[i] <= 9) texte += alphanum[i];
+                else if (alphanum[i] >= 10 && alphanum[i] <= 35) texte += (char)(alphanum[i] + 55);
+                else if (alphanum[i] == 37) texte += '$';
+                else if (alphanum[i] == 38) texte += '%';
+                else if (alphanum[i] == 39) texte += '*';
+                else if (alphanum[i] == 40) texte += '+';
+                else if (alphanum[i] == 41) texte += '-';
+                else if (alphanum[i] == 42) texte += '.';
+                else if (alphanum[i] == 43) texte += '/';
+                else if (alphanum[i] == 44) texte += ':';
+                else if (alphanum[i] == 36) texte += ' ';
+            }
+            return texte;
+        }
 
         public static void WriteBoolImage(bool[,] boolIm, MyImage image, bool boolImToImage)
         {
@@ -706,7 +729,7 @@ namespace Projet_PSI
                 for (int j = 0; j < image.largeur; j++)
                 {
                     if (boolImToImage) image.image[i, j] = boolIm[i / facteur, j / facteur] ? noir : blanc;
-                    else boolIm[i / facteur, j / facteur] = image.image[i + facteur / 2, j + facteur / 2].PlusProcheDeQue(noir, blanc);
+                    else if (i % facteur == 0 && j % facteur == 0) boolIm[i / facteur, j / facteur] = image.image[i + facteur / 2, j + facteur / 2].PlusProcheDeQue(noir, blanc);
                 }
             }
         }

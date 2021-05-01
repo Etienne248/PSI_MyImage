@@ -124,6 +124,7 @@ namespace Projet_PSI
                                 int taille = 8;
                                 bool[,] QRcode = new bool[image.Image.GetLength(0) / taille, image.Image.GetLength(1) / taille];
                                 MyImage.WriteBoolImage(QRcode, image, false);
+                                Console.WriteLine(MyImage.Decodage_QR(QRcode));
                                 break;
                             }
                     }
