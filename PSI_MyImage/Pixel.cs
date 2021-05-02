@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Projet_PSI
 {
@@ -12,21 +10,21 @@ namespace Projet_PSI
         // les propriétés sont nécessaires pourla classe MyImage
         public byte Rouge
         {
-            get{ return rouge;}
-            set{rouge = value;}
+            get { return rouge; }
+            set { rouge = value; }
         }
         public byte Vert
         {
-            get{return vert;}
-            set{vert = value;}
+            get { return vert; }
+            set { vert = value; }
         }
         public byte Bleu
         {
-            get{return bleu;}
-            set{bleu = value;}
+            get { return bleu; }
+            set { bleu = value; }
         }
 
-        public Pixel(int rouge , int vert , int bleu )// constructeur de la classe Pixel
+        public Pixel(int rouge, int vert, int bleu)// constructeur de la classe Pixel
         {
             // en cas de saturation, permet de faire en sorte  que les couleurs soient toujours entre 0 et 255
             if (rouge <= 0) this.rouge = 0;
@@ -39,7 +37,7 @@ namespace Projet_PSI
 
             if (bleu <= 0) this.bleu = 0;
             else if (bleu >= 255) this.bleu = 255;
-            else this.bleu = (byte)(bleu); 
+            else this.bleu = (byte)(bleu);
         }
         public Pixel(byte rouge, byte vert, byte bleu)// constructeur de la classe Pixel
         {
@@ -58,11 +56,11 @@ namespace Projet_PSI
         {
             return rouge + " " + vert + " " + bleu;
         }
-        
-        public bool PlusProcheDeQue(Pixel a,Pixel b)
+
+        public bool PlusProcheDeQue(Pixel a, Pixel b)
         {
-            int i=Math.Abs(rouge-a.Rouge)+ Math.Abs(vert - a.Vert)+ Math.Abs(bleu - a.Bleu)-(Math.Abs(rouge - b.Rouge) + Math.Abs(vert - b.Vert) + Math.Abs(bleu - b.Bleu));
-            return i<0;
+            int i = Math.Abs(rouge - a.Rouge) + Math.Abs(vert - a.Vert) + Math.Abs(bleu - a.Bleu) - (Math.Abs(rouge - b.Rouge) + Math.Abs(vert - b.Vert) + Math.Abs(bleu - b.Bleu));
+            return i < 0;
         }
     }
 }

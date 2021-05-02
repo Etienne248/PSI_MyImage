@@ -576,7 +576,7 @@ namespace Projet_PSI
             MultiSquare(QRcode, remplisage, 3, 3);
             MultiSquare(QRcode, remplisage, 3, QRcode.GetLength(1) - 4);
             MultiSquare(QRcode, remplisage, QRcode.GetLength(0) - 4, 3);
-            if (QRcode.GetLength(0) == 25) MultiSquare(QRcode, new bool[] { true, false, true }, 18, 18);//on le motif d'alignement se c'est la version 2
+            if (QRcode.GetLength(0) == 25) MultiSquare(QRcode, new bool[] { true, false, true }, 18, 18);//on place le motif d'alignement si c'est la version 2
 
             //on place les informations concernant le masque et de la correction d'erreur
             List<bool> masque0correctionL = Int_To_Bits(0b111011111000100, 15);
@@ -595,7 +595,7 @@ namespace Projet_PSI
                     QRcode[(i <= 8) ? (15 - i) : (14 - i), 8] = b;
                 }
             }
-            QRcode[QRcode.GetLength(0) - 8, 8] = true;
+            QRcode[QRcode.GetLength(0) - 8, 8] = true;//on place le module sombre
 
             //on place les motifs de synchronisation
             b = true;
@@ -611,6 +611,7 @@ namespace Projet_PSI
 
         public static string Decodage_QR(bool[,] QRcode)
         {
+            //on trouve la version du QRcode en regardant sa taille
             int nombreOctetsDonnees;
             int nombreOctetsEC;
             if (QRcode.GetLength(0) == 21)
@@ -628,55 +629,55 @@ namespace Projet_PSI
                 Console.WriteLine("QRcode non valide");
                 return null;
             }
-            List<bool> donnees = new List<bool>();
-            List<bool> EC = new List<bool>();
+            List<bool> donnees = new List<bool>();//Création de la chaîne avec les données 
+            List<bool> EC = new List<bool>();//Création de la chaîne avec la correction d'erreur 
             {
                 List<bool> donnees_et_EC = new List<bool>();
-                ParcourirEmplacementDonnees(donnees_et_EC, QRcode, false);
-                donnees = donnees_et_EC.GetRange(0, nombreOctetsDonnees * 8);
-                EC = donnees_et_EC.GetRange(nombreOctetsDonnees * 8, nombreOctetsEC * 8);
+                ParcourirEmplacementDonnees(donnees_et_EC, QRcode, false);//On lit toutes les données du QRcode 
+                donnees = donnees_et_EC.GetRange(0, nombreOctetsDonnees * 8);//On met tous les bits de données dans donnees 
+                EC = donnees_et_EC.GetRange(nombreOctetsDonnees * 8, nombreOctetsEC * 8); //On met tous les bits de correction d'erreur dans EC
             }
-            byte[] donneescorrige = ReedSolomonAlgorithm.Decode(Bits_To_Bytes(donnees), Bits_To_Bytes(EC), ErrorCorrectionCodeType.QRCode);
-            donnees = Bytes_To_Bits(donneescorrige);
+            byte[] donneescorrige = ReedSolomonAlgorithm.Decode(Bits_To_Bytes(donnees), Bits_To_Bytes(EC), ErrorCorrectionCodeType.QRCode);//On effectuer la correction d'erreur 
+            donnees = Bytes_To_Bits(donneescorrige);//Conversion de la chaîne octet en chaîne de bits
 
-            int tailleTexte = Bits_To_Int(donnees.GetRange(4, 9));
-            byte[] alphanum = new byte[tailleTexte];
+            int tailleTexte = Bits_To_Int(donnees.GetRange(4, 9));//Lecture de la taille du texte
+            byte[] alphanum = new byte[tailleTexte];//Création de la chaîne de caractère en alphanumerique
             for (int i = 0; i < (tailleTexte / 2); i++)
             {
-                int bits11 = Bits_To_Int(donnees.GetRange((i * 11) + 13, 11));
-                alphanum[i * 2] = (byte)(bits11 / 45);
-                alphanum[i * 2 + 1] = (byte)(bits11 % 45);
+                int bits11 = Bits_To_Int(donnees.GetRange((i * 11) + 13, 11));//lecture de 11 bits codant 2 caractères
+                alphanum[i * 2] = (byte)(bits11 / 45);//décodage du premier caractère
+                alphanum[i * 2 + 1] = (byte)(bits11 % 45);//décodage du second caractère
             }
-            if ((tailleTexte % 2) == 1) alphanum[alphanum.Length - 1] = (byte)Bits_To_Int(donnees.GetRange((tailleTexte / 2) * 11 + 13, 6));
-            return Alphanumerique_To_String(alphanum);
+            if ((tailleTexte % 2) == 1) alphanum[alphanum.Length - 1] = (byte)Bits_To_Int(donnees.GetRange((tailleTexte / 2) * 11 + 13, 6));//décodage du dernier caractère
+            return Alphanumerique_To_String(alphanum);//On retourne la chaîne alphanumérique convertie en string
         }
 
         public static void ParcourirEmplacementDonnees(List<bool> donnees, bool[,] QRcode, bool WriteElseRead)
         {
             int i = 0;
-            bool upElsedown = true;
+            bool upElsedown = true;//Variable décidant si le parcours se fait en montant ou en descendant 
             bool mode1 = QRcode.GetLength(0) == 21;
-            for (int x = QRcode.GetLength(1) - 1; x >= 0; x -= 2)
+            for (int x = QRcode.GetLength(1) - 1; x >= 0; x -= 2)//les colonnes du QRcode sont parcours 2 par 2
             {
-                if (x == 6) x--;
-                int a = QRcode.GetLength(0) - (x > 8 ? 1 : 9);
-                int b = (x > 8 && x < QRcode.GetLength(1) - 8 ? 0 : 9);
-                for (int y = upElsedown ? a : b; upElsedown ? y >= b : y <= a; y += upElsedown ? -1 : 1)
+                if (x == 6) x--;//on saute une colonne si on atteint motifs de synchronisation vertical
+                int a = QRcode.GetLength(0) - (x > 8 ? 1 : 9);//coordonnées verticales la plus basse pour les deux colonnes spécifiée
+                int b = (x > 8 && x < QRcode.GetLength(1) - 8 ? 0 : 9);//coordonnées verticales la plus haute pour les deux colonnes spécifiée
+                for (int y = upElsedown ? a : b; upElsedown ? y >= b : y <= a; y += upElsedown ? -1 : 1)//on alterne à chaque fois entre un parcours montant et descendant
                 {
-                    for (int xbis = x; xbis > x - 2; xbis--)
+                    for (int xbis = x; xbis > x - 2; xbis--)//on alterne entre la colonne de gauche et droit
                     {
-                        if ((mode1 || y > 18 + 2 || y < 18 - 2 || xbis > 18 + 2 || xbis < 18 - 2) && y != 6)
+                        if ((mode1 || y > 18 + 2 || y < 18 - 2 || xbis > 18 + 2 || xbis < 18 - 2) && y != 6)//on vérifie si la case actuelle n'est pas un motif d'alignement ou un motif de synchronisation
                         {
                             if (WriteElseRead)
                             {
-                                QRcode[y, xbis] = (i < donnees.Count ? donnees[i] : false) /*masque0*/^ (y + xbis) % 2 == 0;
+                                QRcode[y, xbis] = (i < donnees.Count ? donnees[i] : false) /*masque0->*/^ (y + xbis) % 2 == 0;//lecture des données et écriture dans le QR Code
                                 i++;
                             }
-                            else donnees.Add(QRcode[y, xbis] /*masque0*/^ (y + xbis) % 2 == 0);
+                            else donnees.Add(QRcode[y, xbis] /*masque0->*/^ (y + xbis) % 2 == 0);//lecture de la case du QR Code et écriture des données 
                         }
                     }
                 }
-                upElsedown = !upElsedown;
+                upElsedown = !upElsedown;//inversion du booléen
             }
         }
 
@@ -728,12 +729,22 @@ namespace Projet_PSI
             {
                 for (int j = 0; j < image.largeur; j++)
                 {
+                    //on met les pixels en noir si la valeur est true sinon on les met en blanc
                     if (boolImToImage) image.image[i, j] = boolIm[i / facteur, j / facteur] ? noir : blanc;
+                    //on écrit true si le pixel est plus proche de noir que de blanc sinon on écrit false
                     else if (i % facteur == 0 && j % facteur == 0) boolIm[i / facteur, j / facteur] = image.image[i + facteur / 2, j + facteur / 2].PlusProcheDeQue(noir, blanc);
                 }
             }
         }
 
+        /// <summary>
+        /// dessine des carrés concentriques dans une matrice selon un tableu de valeur
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="matrice"></param>
+        /// <param name="remplisage"></param>
+        /// <param name="y"></param>
+        /// <param name="x"></param>
         public static void MultiSquare<T>(T[,] matrice, T[] remplisage, int y, int x)
         {
             int ymax = Math.Min(y + remplisage.Length, matrice.GetLength(0));
@@ -742,6 +753,7 @@ namespace Projet_PSI
             {
                 for (int j = Math.Max(x - remplisage.Length + 1, 0); j < xmax; j++)
                 {
+                    //met la valeur du pixel à la valeur de du tableu dont l'indice est la distance max entre celle vertical et horizontal du pixel avec le centre du carée
                     matrice[i, j] = remplisage[Math.Max(Math.Abs(y - i), Math.Abs(x - j))];
                 }
             }
@@ -752,7 +764,8 @@ namespace Projet_PSI
             List<bool> bits = new List<bool>();
             for (int i = 0; i < longueur; i++)
             {
-                bits.Insert(0, ((nombre >> i) & 1) == 1);
+                bits.Insert(0, ((nombre >> i) & 1) == 1);//00000000 00000000 00000000 00000101 
+                                                         //00000001 
             }
             return bits;
         }
@@ -761,7 +774,8 @@ namespace Projet_PSI
             int nombre = 0;
             for (int i = 0; i < bits.Count; i++)
             {
-                nombre |= (bits[i] ? 1 : 0) << (bits.Count - i - 1);
+                nombre |= (bits[i] ? 1 : 0) << (bits.Count - i - 1);//00000000 00000000 00000000 00000z00
+                                                                    //00000000 00000000 00000000 00000zyx 
             }
             return nombre;
         }
@@ -782,13 +796,6 @@ namespace Projet_PSI
                 bits.AddRange(Int_To_Bits(octets[i], 8));
             }
             return bits;
-        }
-
-        static int[] Assemblage_Tableau(int[] x, int[] y) // tab1+tab2=tab3
-        {
-            int[] z = new int[x.Length + y.Length];
-            x.CopyTo(z, 0);
-            y.CopyTo(z, x.Length); return z;
         }
 
         #endregion TD6

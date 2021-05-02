@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 namespace Projet_PSI
 {
@@ -12,7 +13,7 @@ namespace Projet_PSI
             {
                 Console.WriteLine("\nVoulez vous créer une image ou bien en modifier une préexistante? (taper 0 pour quitter)");
                 Console.WriteLine("Vous pouvez rentrer:");
-                Console.WriteLine("1-créer\n2-modifier\n3-ouvrir\n4-enregistrer");
+                Console.WriteLine("1-créer et décoder\n2-modifier\n3-ouvrir\n4-enregistrer");
                 s = Console.ReadLine();
                 if (s == "1" || s == "créer")
                 {
@@ -21,9 +22,9 @@ namespace Projet_PSI
                     Console.WriteLine("Entrez une méthode de création d'une nouvelle image ou 0 pour revenir en arrière (l'image selectionné sera créer pour laisser place à l'image créer!):");
                     Console.WriteLine("Vous pouvez rentrer par exemple:");
                     Console.WriteLine("1-mandelbrot\n2-histogramme\n3-coder\n4-décoder\n5-coder_QR\n6-décoder_QR");
-                    s = Console.ReadLine();
-                    string m;
-                    switch (s)
+                    string m = Console.ReadLine();
+                    
+                    switch (m)
                     {
                         case "1":// il est necessaire d'avoir deja ouvert un image avec l'option "3" pour "histogramme" et "decoder"
                         case "mandelbrot":
@@ -121,10 +122,14 @@ namespace Projet_PSI
                         case "6":
                         case "décoder_QR":
                             {
-                                int taille = 8;
-                                bool[,] QRcode = new bool[image.Image.GetLength(0) / taille, image.Image.GetLength(1) / taille];
-                                MyImage.WriteBoolImage(QRcode, image, false);
-                                Console.WriteLine(MyImage.Decodage_QR(QRcode));
+                                if (image == null) Console.WriteLine("vous devez avant cela ouvrir une image avec l'option 3 ! ");
+                                else
+                                {
+                                    int taille = 8;
+                                    bool[,] QRcode = new bool[image.Image.GetLength(0) / taille, image.Image.GetLength(1) / taille];
+                                    MyImage.WriteBoolImage(QRcode, image, false);
+                                    Console.WriteLine(MyImage.Decodage_QR(QRcode));
+                                }
                                 break;
                             }
                     }
@@ -140,8 +145,8 @@ namespace Projet_PSI
                         Console.WriteLine("Entrez une méthode de traitement ou 0 pour revenir en arrière:");
                         Console.WriteLine("Vous pouvez rentrer par exemple:");
                         Console.WriteLine("1-rotation\n2-redimensionnement\n3-miroir\n4-noir_et_blanc\n5-nuance_de_gris\n6-détection_de_contour\n7-renforcement_des_bords\n8-flou\n9-repoussage");
-                        s = Console.ReadLine();
-                        switch (s)
+                        string m = Console.ReadLine();
+                        switch (m)
                         {
                             case "1":
                             case "rotation":
@@ -194,7 +199,9 @@ namespace Projet_PSI
                 else if (s == "3" || s == "ouvrir")
                 {
                     Console.WriteLine("donner le nom de l'image que vous souhaitez ouvrir. N'écrivez pas de .bmp, et assurez vous que l'image se trouve dans le dossier le plus bas des fichiers du code (exemple:coco)");
-                    image = new MyImage(Console.ReadLine() + ".bmp");// créer une instance de MyImage a partir de ce fichier
+                    string m = Console.ReadLine() + ".bmp";
+                    if (File.Exists(m)) image = new MyImage(m );// créer une instance de MyImage a partir de ce fichier si il existe
+                    else Console.WriteLine("le fichier n'existe pas");
                     Console.WriteLine();
                 }
                 else if (s == "4" || s == "enregistrer")
@@ -211,7 +218,7 @@ namespace Projet_PSI
 
         }
 
-        #region fonction supplémentaire
+        #region fonction supplémentaire de Debug
 
         public static void Affiche<T>(T[] tableau)// fonction qui affiche  l'image quand elle est sous forme de tableau ( l'affiche n'est pas très propre car on ne saute pas de ligne,
         {                                         // sons seul interet est de verifier que l'image de depart est bien la meme, meme apres avoir été converti dans la classe MyImage
@@ -262,7 +269,7 @@ namespace Projet_PSI
                 }
             }
         }
-        public static void Affiche(bool[,] matrice)// fonction qui affiche  l'image quand elle est sous forme de matrice
+        public static void Affiche(bool[,] matrice)// fonction qui affiche une matrice de bool (le QRcode)
         {
 
             if (matrice == null)
@@ -289,6 +296,6 @@ namespace Projet_PSI
                 }
             }
         }
-        #endregion fonction supplémentaire
+        #endregion fonction supplémentaire de Debug
     }
 }
