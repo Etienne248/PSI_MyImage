@@ -5,6 +5,10 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DocumentationFile>D:\ProgramData\Visual Studio\A2\PSI_MyImage\PSI_MyImage\PSI_MyImage.xml</DocumentationFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <None Remove="MyImage.cs~RF256bf106.TMP" />
   </ItemGroup>
